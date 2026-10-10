@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>중2 과학 퀴즈</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --good: #16a34a;
+      --bad: #dc2626;
+      --accent: #059669;
+      --accent-light: #d1fae5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    header {
+      background: linear-gradient(135deg, #047857, #059669);
+      color: white;
+      padding: 28px 20px;
+      text-align: center;
+    }
+    header h1 { margin: 0 0 8px; font-size: 26px; }
+    header p { margin: 0; opacity: .9; }
+    main { max-width: 880px; margin: 22px auto; padding: 0 14px 40px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, .06);
+      margin-bottom: 16px;
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    button, select {
+      border: 1px solid var(--line);
+      background: white;
+      color: var(--text);
+      border-radius: 12px;
+      padding: 10px 13px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+      font-weight: 700;
+    }
+    button.ghost {
+      background: var(--accent-light);
+      border-color: #bfdbfe;
+      color: #047857;
+      font-weight: 700;
+    }
+    button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #3730a3;
+      padding: 6px 10px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .stat {
+      background: #f9fafb;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      text-align: center;
+    }
+    .stat b { display: block; font-size: 21px; }
+    .muted { color: var(--muted); font-size: 14px; }
+    #questionBox h2 { margin: 10px 0 12px; font-size: 22px; }
+    .options {
+      display: grid;
+      gap: 9px;
+      margin: 16px 0;
+    }
+    .option {
+      width: 100%;
+      text-align: left;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: white;
+      padding: 13px 14px;
+      font-size: 16px;
+    }
+    .option:hover { border-color: #93c5fd; background: #eff6ff; }
+    .option.selected { border-color: var(--accent); background: var(--accent-light); }
+    .option.correct { border-color: var(--good); background: #dcfce7; }
+    .option.wrong { border-color: var(--bad); background: #fee2e2; }
+    .feedback {
+      border-radius: 14px;
+      padding: 13px 14px;
+      margin-top: 10px;
+      display: none;
+    }
+    .feedback.good { display: block; background: #dcfce7; border: 1px solid #86efac; color: #14532d; }
+    .feedback.bad { display: block; background: #fee2e2; border: 1px solid #fecaca; color: #7f1d1d; }
+    .option .note {
+      display: none;
+      margin-top: 4px;
+      font-size: 13.5px;
+      color: var(--muted);
+    }
+    .option.show-note .note { display: block; }
+    .option.correct .note, .option.wrong .note { color: #374151; }
+    .explain {
+      margin-top: 6px;
+      color: #374151;
+      font-size: 15px;
+    }
+    .wrong-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    details {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      padding: 10px 12px;
+    }
+    summary { cursor: pointer; font-weight: 700; }
+    .hidden { display: none; }
+    .pickers { display: flex; gap: 8px; flex-wrap: wrap; }
+    .error { background:#fef3c7; border:1px solid #fcd34d; color:#78350f; border-radius:14px; padding:12px 14px; }
+    @media (max-width: 640px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      header h1 { font-size: 22px; }
+      #questionBox h2 { font-size: 19px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 id="pageTitle">중2 과학 퀴즈</h1>
+    <p id="pageDesc">학기를 고르고 문제를 풀어 보세요.</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="row">
+        <div>
+          <span class="pill">학습 모드</span>
+          <p class="muted">학기와 단원을 고르고 문제를 풀어 보세요. 틀린 문제는 자동으로 오답노트에 저장됩니다.</p>
+        </div>
+        <div class="pickers">
+          <select id="semesterSelect" title="학기 선택" onchange="changeSemester(this.value)"></select>
+          <select id="categorySelect" title="단원 선택">
+            <option value="all">전체 범위</option>
+          </select>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="primary" onclick="startQuiz()">퀴즈 시작 / 다시 섞기</button>
+        <button class="ghost" onclick="startWrongOnly()">오답만 다시 풀기</button>
+        <button onclick="resetAll()">기록 초기화</button>
+      </div>
+      <div id="loadError" class="error hidden" style="margin-top:12px;"></div>
+    </section>
+
+    <section class="card">
+      <div class="stats">
+        <div class="stat"><span class="muted">현재 문제</span><b id="currentNum">0</b></div>
+        <div class="stat"><span class="muted">전체 문제</span><b id="totalNum">0</b></div>
+        <div class="stat"><span class="muted">정답</span><b id="correctNum">0</b></div>
+        <div class="stat"><span class="muted">오답</span><b id="wrongNum">0</b></div>
+      </div>
+    </section>
+
+    <section id="questionBox" class="card">
+      <span id="categoryPill" class="pill">대기 중</span>
+      <h2 id="questionText">퀴즈 시작 버튼을 눌러 주세요.</h2>
+      <div id="options" class="options"></div>
+      <div id="feedback" class="feedback"></div>
+      <div class="controls">
+        <button id="checkBtn" class="primary" onclick="checkAnswer()" disabled>정답 확인</button>
+        <button id="nextBtn" onclick="nextQuestion()" disabled>다음 문제</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 style="margin-top:0;">오답노트</h2>
+      <p class="muted">지금 고른 학기에서 틀린 문제가 여기에 쌓입니다. 비우려면 기록 초기화를 눌러 주세요.</p>
+      <div id="wrongList" class="wrong-list"></div>
+    </section>
+  </main>
+
+  <script>
+    // 문제는 data/ 폴더의 .md 파일에 있습니다. 학기 목록은 data/semesters.json.
+    const OLD_DEFAULT_SEM = "m2-2-mid";
+    let semesters = [];
+    let currentSem = null;
+    let questions = [];
+
+    let pool = [];
+    let index = 0;
+    let selected = null;
+    let correct = 0;
+    let wrong = 0;
+    let answered = false;
+    let wrongNotes = loadWrongNotes();
+
+    function loadWrongNotes() {
+      try {
+        const arr = JSON.parse(localStorage.getItem("scienceWrongNotes") || "[]");
+        return arr.map(x => ({ ...x, sem: x.sem || OLD_DEFAULT_SEM }));
+      } catch (e) { return []; }
+    }
+    function saveWrongNotes() {
+      try { localStorage.setItem("scienceWrongNotes", JSON.stringify(wrongNotes)); } catch (e) {}
+    }
+
+    // ---------- 마크다운 문제 파일 읽기 ----------
+    // # 제목 / > 설명 / ## 단원 / ### 문제 / - [x] 정답 / - [ ] 오답 / > 해설
+    function parseQuizMarkdown(text) {
+      const lines = text.replace(/<!--[\s\S]*?-->/g, "").split(/\r?\n/);
+      const result = { title: "", desc: "", questions: [] };
+      let cat = "", q = null;
+      for (const raw of lines) {
+        const line = raw.trim();
+        if (!line) continue;
+        if (line.startsWith("### ")) {
+          q = { cat, q: line.slice(4).trim(), a: null, opts: [], notes: {}, exp: "" };
+          result.questions.push(q);
+        } else if (line.startsWith("## ")) {
+          cat = line.slice(3).trim(); q = null;
+        } else if (line.startsWith("# ")) {
+          result.title = line.slice(2).trim();
+        } else if (/^[-*] \[( |x|X)\]/.test(line) && q) {
+          const isAnswer = /^[-*] \[(x|X)\]/.test(line);
+          const body = line.replace(/^[-*] \[( |x|X)\]\s*/, "");
+          const cut = body.indexOf(" — ");
+          const opt = (cut >= 0 ? body.slice(0, cut) : body).trim();
+          if (cut >= 0) q.notes[opt] = body.slice(cut + 3).trim();
+          q.opts.push(opt);
+          if (isAnswer) q.a = opt;
+        } else if (line.startsWith(">")) {
+          const t = line.replace(/^>\s?/, "").replace(/^해설\s*[:：]\s*/, "");
+          if (q) q.exp += (q.exp ? " " : "") + t;
+          else result.desc += (result.desc ? " " : "") + t;
+        }
+      }
+      result.questions = result.questions.filter(x => {
+        const ok = x.a && x.opts.length >= 2;
+        if (!ok) console.warn("정답이 없거나 보기가 부족한 문제는 건너뜀:", x.q);
+        return ok;
+      });
+      return result;
+    }
+
+    async function init() {
+      try {
+        semesters = await fetch("data/semesters.json", { cache: "no-cache" }).then(r => {
+          if (!r.ok) throw new Error(r.status); return r.json();
+        });
+      } catch (e) {
+        showError("학기 목록(data/semesters.json)을 불러오지 못했습니다. 파일을 컴퓨터에서 바로 열면(file://) 불러올 수 없으니, GitHub Pages 주소로 열어 주세요.");
+        return;
+      }
+      const sel = document.getElementById("semesterSelect");
+      sel.innerHTML = semesters.map(s => `<option value="${s.id}">${s.title}</option>`).join("");
+      const fromUrl = new URLSearchParams(location.search).get("s");
+      let saved = null;
+      try { saved = localStorage.getItem("scienceSemester"); } catch (e) {}
+      const first = [fromUrl, saved].find(id => semesters.some(s => s.id === id)) || semesters[0].id;
+      await changeSemester(first);
+    }
+
+    async function changeSemester(id) {
+      const sem = semesters.find(s => s.id === id);
+      if (!sem) return;
+      document.getElementById("semesterSelect").value = id;
+      try { localStorage.setItem("scienceSemester", id); } catch (e) {}
+      let parsed;
+      try {
+        const text = await fetch(sem.file, { cache: "no-cache" }).then(r => {
+          if (!r.ok) throw new Error(r.status); return r.text();
+        });
+        parsed = parseQuizMarkdown(text);
+      } catch (e) {
+        showError(`문제 파일(${sem.file})을 불러오지 못했습니다.`);
+        return;
+      }
+      hideError();
+      currentSem = id;
+      questions = parsed.questions;
+      document.getElementById("pageTitle").textContent = `중2 과학 퀴즈: ${parsed.title || sem.title}`;
+      document.getElementById("pageDesc").textContent = parsed.desc || "";
+      document.title = `과학 퀴즈 - ${sem.title}`;
+
+      const cats = [...new Set(questions.map(x => x.cat))];
+      document.getElementById("categorySelect").innerHTML =
+        `<option value="all">전체 범위 (${questions.length}문제)</option>` +
+        cats.map(c => `<option value="${c}">${c} (${questions.filter(x => x.cat === c).length})</option>`).join("");
+
+      pool = []; index = 0; correct = 0; wrong = 0;
+      resetQuestionBox();
+      renderStats();
+      renderWrongList();
+    }
+
+    function showError(msg) { const b = document.getElementById("loadError"); b.textContent = msg; b.classList.remove("hidden"); }
+    function hideError() { document.getElementById("loadError").classList.add("hidden"); }
+
+    // ---------- 퀴즈 ----------
+    function shuffle(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function semWrongNotes() { return wrongNotes.filter(x => x.sem === currentSem); }
+
+    function startQuiz() {
+      const cat = document.getElementById("categorySelect").value;
+      pool = shuffle(questions.filter(x => cat === "all" || x.cat === cat));
+      index = 0; correct = 0; wrong = 0;
+      renderQuestion();
+      renderStats();
+    }
+
+    function startWrongOnly() {
+      const notes = semWrongNotes();
+      if (notes.length === 0) {
+        alert("이 학기 오답노트에 아직 문제가 없습니다.");
+        return;
+      }
+      const ids = new Set(notes.map(x => x.q));
+      pool = shuffle(questions.filter(x => ids.has(x.q)));
+      index = 0; correct = 0; wrong = 0;
+      renderQuestion();
+      renderStats();
+    }
+
+    function resetQuestionBox() {
+      document.getElementById("categoryPill").textContent = "대기 중";
+      document.getElementById("questionText").textContent = "퀴즈 시작 버튼을 눌러 주세요.";
+      document.getElementById("options").innerHTML = "";
+      document.getElementById("feedback").className = "feedback";
+      document.getElementById("feedback").innerHTML = "";
+      document.getElementById("checkBtn").disabled = true;
+      document.getElementById("nextBtn").disabled = true;
+    }
+
+    function renderQuestion() {
+      selected = null;
+      answered = false;
+      const q = pool[index];
+      const options = document.getElementById("options");
+      const feedback = document.getElementById("feedback");
+      feedback.className = "feedback";
+      feedback.innerHTML = "";
+      document.getElementById("checkBtn").disabled = true;
+      document.getElementById("nextBtn").disabled = true;
+
+      if (!q) {
+        document.getElementById("categoryPill").textContent = "완료";
+        document.getElementById("questionText").textContent = "퀴즈가 끝났습니다.";
+        options.innerHTML = `<p class="muted">정답 ${correct}개, 오답 ${wrong}개입니다. 다시 풀려면 위의 버튼을 눌러 주세요.</p>`;
+        renderStats();
+        renderWrongList();
+        return;
+      }
+
+      document.getElementById("categoryPill").textContent = q.cat;
+      document.getElementById("questionText").textContent = q.q;
+      options.innerHTML = "";
+      shuffle(q.opts).forEach(opt => {
+        const btn = document.createElement("button");
+        btn.className = "option";
+        btn.dataset.opt = opt;
+        const label = document.createElement("div");
+        label.textContent = opt;
+        btn.appendChild(label);
+        if (q.notes && q.notes[opt]) {
+          const note = document.createElement("div");
+          note.className = "note";
+          note.textContent = "→ " + q.notes[opt];
+          btn.appendChild(note);
+        }
+        btn.onclick = () => {
+          if (answered) return;
+          document.querySelectorAll(".option").forEach(b => b.classList.remove("selected"));
+          btn.classList.add("selected");
+          selected = opt;
+          document.getElementById("checkBtn").disabled = false;
+        };
+        options.appendChild(btn);
+      });
+      renderStats();
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    function checkAnswer() {
+      if (!selected || answered) return;
+      answered = true;
+      const q = pool[index];
+      const isCorrect = selected === q.a;
+      const feedback = document.getElementById("feedback");
+
+      document.querySelectorAll(".option").forEach(btn => {
+        btn.classList.add("show-note");
+        if (btn.dataset.opt === q.a) btn.classList.add("correct");
+        else if (btn.dataset.opt === selected) btn.classList.add("wrong");
+      });
+
+      if (isCorrect) {
+        correct++;
+        feedback.className = "feedback good";
+        feedback.innerHTML = `<b>정답!</b><div class="explain">${escapeHtml(q.exp)}</div>`;
+      } else {
+        wrong++;
+        feedback.className = "feedback bad";
+        feedback.innerHTML = `<b>오답.</b> 정답은 <b>${escapeHtml(q.a)}</b>입니다.<div class="explain">${escapeHtml(q.exp)}</div>`;
+        addWrong(q);
+      }
+
+      document.getElementById("checkBtn").disabled = true;
+      document.getElementById("nextBtn").disabled = false;
+      renderStats();
+      renderWrongList();
+    }
+
+    function nextQuestion() {
+      index++;
+      renderQuestion();
+    }
+
+    function addWrong(q) {
+      if (!wrongNotes.some(x => x.sem === currentSem && x.q === q.q)) {
+        wrongNotes.push({ sem: currentSem, cat: q.cat, q: q.q, a: q.a, exp: q.exp });
+        saveWrongNotes();
+      }
+    }
+
+    function renderWrongList() {
+      const box = document.getElementById("wrongList");
+      const notes = semWrongNotes();
+      if (notes.length === 0) {
+        box.innerHTML = `<p class="muted">아직 틀린 문제가 없습니다.</p>`;
+        return;
+      }
+      box.innerHTML = notes.map((x, i) => `
+        <details>
+          <summary>${i + 1}. [${escapeHtml(x.cat)}] ${escapeHtml(x.q)}</summary>
+          <p><b>정답:</b> ${escapeHtml(x.a)}</p>
+          <p class="muted">${escapeHtml(x.exp)}</p>
+        </details>
+      `).join("");
+    }
+
+    function renderStats() {
+      document.getElementById("currentNum").textContent = pool.length ? Math.min(index + 1, pool.length) : 0;
+      document.getElementById("totalNum").textContent = pool.length;
+      document.getElementById("correctNum").textContent = correct;
+      document.getElementById("wrongNum").textContent = wrong;
+    }
+
+    function resetAll() {
+      const title = (semesters.find(s => s.id === currentSem) || {}).title || "";
+      if (!confirm(`${title} 점수와 오답노트를 초기화할까요?`)) return;
+      wrongNotes = wrongNotes.filter(x => x.sem !== currentSem);
+      saveWrongNotes();
+      correct = 0; wrong = 0; index = 0; pool = [];
+      resetQuestionBox();
+      renderStats();
+      renderWrongList();
+    }
+
+    renderStats();
+    init();
+  </script>
+</body>
+</html>
