@@ -184,10 +184,14 @@
           <select id="categorySelect" title="단원 선택">
             <option value="all">전체 범위</option>
           </select>
+          <select id="orderSelect" title="문제 순서" onchange="saveOrder(this.value)">
+            <option value="random">랜덤 순서</option>
+            <option value="book">교과서 순서</option>
+          </select>
         </div>
       </div>
       <div class="controls">
-        <button class="primary" onclick="startQuiz()">퀴즈 시작 / 다시 섞기</button>
+        <button class="primary" onclick="startQuiz()">퀴즈 시작</button>
         <button class="ghost" onclick="startWrongOnly()">오답만 다시 풀기</button>
         <button onclick="resetAll()">기록 초기화</button>
       </div>
@@ -285,6 +289,7 @@
     }
 
     async function init() {
+      loadOrder();
       try {
         semesters = await fetch("data/semesters.json", { cache: "no-cache" }).then(r => {
           if (!r.ok) throw new Error(r.status); return r.json();
@@ -348,11 +353,22 @@
       return a;
     }
 
+    // 문제 순서: random(랜덤) / book(교과서 순서 = md 파일에 적힌 순서)
+    function arrange(arr) {
+      return document.getElementById("orderSelect").value === "book" ? [...arr] : shuffle(arr);
+    }
+    function saveOrder(v) { try { localStorage.setItem("scienceOrder", v); } catch (e) {} }
+    function loadOrder() {
+      let v = null;
+      try { v = localStorage.getItem("scienceOrder"); } catch (e) {}
+      if (v === "book" || v === "random") document.getElementById("orderSelect").value = v;
+    }
+
     function semWrongNotes() { return wrongNotes.filter(x => x.sem === currentSem); }
 
     function startQuiz() {
       const cat = document.getElementById("categorySelect").value;
-      pool = shuffle(questions.filter(x => cat === "all" || x.cat === cat));
+      pool = arrange(questions.filter(x => cat === "all" || x.cat === cat));
       index = 0; correct = 0; wrong = 0;
       renderQuestion();
       renderStats();
@@ -365,7 +381,7 @@
         return;
       }
       const ids = new Set(notes.map(x => x.q));
-      pool = shuffle(questions.filter(x => ids.has(x.q)));
+      pool = arrange(questions.filter(x => ids.has(x.q)));
       index = 0; correct = 0; wrong = 0;
       renderQuestion();
       renderStats();
